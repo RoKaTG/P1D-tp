@@ -15,9 +15,13 @@ void set_GB_operator_colMajor_poisson1D(double* AB, int *lab, int *la, int *kv){
   for (int j = 0; j < (*la); j++) {
         AB[(*kv) + j * (*lab)] = 2.0;
 
-        if (j > 0 || j < (*la) - 1) {
+        if (j > 0) {
             AB[(*kv) - 1 + j * (*lab)] = -1.0;
         } 
+
+        if (j < (*la) - 1) {
+            AB[(*kv) - 1 + j * (*lab)] = -1.0;
+        }
     }
 }
 
@@ -26,14 +30,19 @@ void set_GB_operator_colMajor_poisson1D_Id(double* AB, int *lab, int *la, int *k
 }
 
 void set_dense_RHS_DBC_1D(double* RHS, int* la, double* BC0, double* BC1){
-      for (int i = 0; i < *la; i++) {
+      for (int i = 0; i < (*la); i++) {
         RHS[i] = 0.0;
         }
-    RHS[0] = *BC0;
-    RHS[*la - 1] = *BC1;
+    RHS[0] = (*BC0);
+    RHS[(*la) - 1] = (*BC1);
 }
 
 void set_analytical_solution_DBC_1D(double* EX_SOL, double* X, int* la, double* BC0, double* BC1){
+  //EX_SOL[(*la)] = EX_SOL[(*la) + 2];
+  
+  for (int i = 0; i < ((*la)); i++) {
+    EX_SOL[i] = (*BC0) + i * ((*BC1) - (*BC0));  
+  } 
 }  
 
 void set_grid_points_1D(double* x, int* la){
