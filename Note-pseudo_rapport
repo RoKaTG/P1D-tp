@@ -1,9 +1,16 @@
-3) a)
+3)
+1]
 On déclare une variable globale qui sera la taille de la matrice, puis on declare une variable locale qui srecevra la variable globale, puis une deuxieme variable locale qui recevra la premiere variable local * la premiere variable local.
 
 Ensuite on créer un pointeur double donc double *A, qui est notre matrice A puis on alloue la mêmoire avec un malloc de la premiere variable locale * elle même donc 
 A = (double *)malloc(N*N*sizeof(double));
 
-b) LAPACK_COL_MAJOR est une constante permettant de dire à la routine que nous utilisons la methode de stockage column major pour l'array, si une routne à plusieurs array inputs, on doit garder la même methode de stockage.
+2]
+LAPACK_COL_MAJOR est une constante permettant de dire à la routine que nous utilisons la methode de stockage column major pour l'array, si une routne à plusieurs array inputs, on doit garder la même methode de stockage.
 
-c)
+3]
+
+4] DGBMV  performs one of the matrix-vector operations
+
+    y := alpha*A*x + beta*y,   or   y := alpha*A**T*x + beta*y,
+C'est la méthode du GAXPY

@@ -6,6 +6,14 @@
 #include "../include/lib_poisson1D.h"
 
 void set_GB_operator_colMajor_poisson1D(double* AB, int *lab, int *la, int *kv){
+  for (int j = 0; j < *la; j++) {
+        // Diagonale principale = ??
+        AB[(*kv) + j * (*lab)] = 2.0;
+        // Sous-diagonale & sur-diagonale = ??
+        if (j > 0 || j < (*la) - 1) {
+            AB[(*kv) - 1 + j * (*lab)] = -1.0;
+        } 
+    }
 }
 
 void set_GB_operator_colMajor_poisson1D_Id(double* AB, int *lab, int *la, int *kv){
