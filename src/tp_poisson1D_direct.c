@@ -22,6 +22,22 @@ int main(int argc,char *argv[])
   double **AAB;
   double *AB;
 
+/************************************************/
+
+  double beta;
+  double alpha;
+
+  int incx;
+  int incy;
+
+/***********************************************/
+  
+  beta = 0.0;
+  alpha = 1.0;
+  incx = 1;
+  incy = 1;
+
+/***********************************************/
   double temp, relres;
 
   NRHS=1;
@@ -29,6 +45,7 @@ int main(int argc,char *argv[])
   la=nbpoints-2;
   T0=-5.0;
   T1=5.0;
+
 
   printf("--------- Poisson 1D ---------\n\n");
   RHS=(double *) malloc(sizeof(double)*la);
@@ -52,8 +69,9 @@ int main(int argc,char *argv[])
   AB = (double *) malloc(sizeof(double)*lab*la);
 
   set_GB_operator_colMajor_poisson1D(AB, &lab, &la, &kv);
+  cblas_dgbmv(CblasColMajor, CblasNoTrans, la, la, kl, ku, alpha, AB, lab, X, incx, beta, RHS, incy);
 
-  // write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "AB.dat");
+  write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "AB.dat");
 
   printf("Solution with LAPACK\n");
   /* LU Factorization */
@@ -88,5 +106,14 @@ int main(int argc,char *argv[])
   free(EX_SOL);
   free(X);
   free(AB);
+  /*
+  free(incx);
+  free(incy);
+  free(alpha);
+  free(beta);
+  */
+
+	//free (A);
+
   printf("\n\n--------- End -----------\n");
 }
