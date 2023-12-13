@@ -41,7 +41,7 @@ void set_analytical_solution_DBC_1D(double* EX_SOL, double* X, int* la, double* 
   //EX_SOL[(*la)] = EX_SOL[(*la) + 2];
   
   for (int i = 0; i < ((*la)); i++) {
-    EX_SOL[i] = (*BC0) + i * ((*BC1) - (*BC0));  
+    EX_SOL[i] = (*BC0) + X[i] * ((*BC1) - (*BC0));  
   } 
 }  
 
