@@ -3,8 +3,8 @@
 /* This file contains the main function   */
 /* to solve the Poisson 1D problem        */
 /******************************************/
-#include "lib_poisson1D.h"
-#include "atlas_headers.h"
+#include "../include/lib_poisson1D.h"
+#include "../include/atlas_headers.h"
 
 int main(int argc,char *argv[])
 /* ** argc: Nombre d'arguments */
@@ -38,6 +38,7 @@ int main(int argc,char *argv[])
   incy = 1;
 
 /***********************************************/
+
   double temp, relres;
 
   NRHS=1;
@@ -45,7 +46,6 @@ int main(int argc,char *argv[])
   la=nbpoints-2;
   T0=-5.0;
   T1=5.0;
-
 
   printf("--------- Poisson 1D ---------\n\n");
   RHS=(double *) malloc(sizeof(double)*la);
@@ -69,9 +69,10 @@ int main(int argc,char *argv[])
   AB = (double *) malloc(sizeof(double)*lab*la);
 
   set_GB_operator_colMajor_poisson1D(AB, &lab, &la, &kv);
-  cblas_dgbmv(CblasColMajor, CblasNoTrans, la, la, kl, ku, alpha, AB, lab, X, incx, beta, RHS, incy);
 
   write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "AB.dat");
+
+  cblas_dgbmv(CblasColMajor, CblasNoTrans, la, la, kl, ku, alpha, AB, lab, X, incx, beta, RHS, incy);
 
   printf("Solution with LAPACK\n");
   /* LU Factorization */
@@ -80,9 +81,9 @@ int main(int argc,char *argv[])
   dgbtrf_(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
 
   /* LU for tridiagonal matrix  (can replace dgbtrf_) */
-  // ierr = dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
+  ierr = dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
 
-  // write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat");
+  write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat");
   
   /* Solution (Triangular) */
   if (info==0){
@@ -94,7 +95,13 @@ int main(int argc,char *argv[])
 
   /* It can also be solved with dgbsv */
   // TODO : use dgbsv
+  if (info==0) {
+    dgbsv_("N", &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
+    if (info!=0){printf("\n INFO DGBSV = %d\n",info);}
 
+  } else {
+    printf("\n INFO = %d\n",info);
+  }
   write_xy(RHS, X, &la, "SOL.dat");
 
   /* Relative forward error */
@@ -106,14 +113,5 @@ int main(int argc,char *argv[])
   free(EX_SOL);
   free(X);
   free(AB);
-  /*
-  free(incx);
-  free(incy);
-  free(alpha);
-  free(beta);
-  */
-
-	//free (A);
-
   printf("\n\n--------- End -----------\n");
 }
