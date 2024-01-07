@@ -90,30 +90,37 @@ int main(int argc,char *argv[])
   printf("Solution with LAPACK\n");
   ipiv = (int *) calloc(la, sizeof(int));
 
+  clock_t start_TRF;
+  clock_t end_TRF;
 
-  clock_t start_TRF = clock();
+  clock_t start_TRI;
+  clock_t end_TRI;
+
+  clock_t start_TRS;
+  clock_t end_TRS;
+
+  clock_t start_SV;
+  clock_t end_SV;
+
 
   /* LU Factorization */
   if (IMPLEM == TRF) {
+    clock_t start_TRF = clock();
     dgbtrf_(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
+    clock_t end_TRF = clock();
   }
 
-  clock_t end_TRF = clock();
-  double cpu_time_used_TRF = ((double) (end_TRF - start_TRF)) / CLOCKS_PER_SEC;
-
-  clock_t start_TRI = clock();
 
   /* LU for tridiagonal matrix  (can replace dgbtrf_) */
   if (IMPLEM == TRI) {
+    clock_t start_TRI = clock();
     dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
+    clock_t end_TRI = clock();
   }
-
-  clock_t end_TRI = clock();
-  double cpu_time_used_TRI = ((double) (end_TRI - start_TRI)) / CLOCKS_PER_SEC;
   
-  clock_t start_TRS = clock();
 
   if (IMPLEM == TRI || IMPLEM == TRF){
+    clock_t start_TRS = clock();
     /* Solution (Triangular) */
     if (info==0){
       dgbtrs_("N", &la, &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
@@ -121,16 +128,14 @@ int main(int argc,char *argv[])
     }else{
       printf("\n INFO = %d\n",info);
     }
+    clock_t end_TRS = clock();
+
   }
-
-  clock_t end_TRS = clock();
-  double cpu_time_used_TRS = ((double) (end_TRS - start_TRS)) / CLOCKS_PER_SEC;
-
-  clock_t start_SV = clock();
 
   /* It can also be solved with dgbsv */
   // TODO : use dgbsv
   if (IMPLEM == SV) {
+    clock_t start_SV = clock();
     if (info==0) {
         dgbsv_("N", &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
         if (info!=0){printf("\n INFO DGBSV = %d\n",info);}
@@ -138,15 +143,20 @@ int main(int argc,char *argv[])
     } else {
         printf("\n INFO = %d\n",info);
     }
-}
-  clock_t end_SV = clock();
-  double cpu_time_used_SV = ((double) (end_SV - start_SV)) / CLOCKS_PER_SEC;
+    clock_t end_SV = clock();
+  }
 
   write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat");
   write_xy(RHS, X, &la, "SOL.dat");
 
   /* Relative forward error */
   relres = relative_forward_error(RHS, EX_SOL, &la);
+
+  /*Benchmarking of every routines used to compute a linear equation*/
+  double cpu_time_used_TRF = ((double) (end_TRF - start_TRF)) / CLOCKS_PER_SEC;
+  double cpu_time_used_TRI = ((double) (end_TRI - start_TRI)) / CLOCKS_PER_SEC;
+  double cpu_time_used_TRS = ((double) (end_TRS - start_TRS)) / CLOCKS_PER_SEC;
+  double cpu_time_used_SV = ((double) (end_SV - start_SV)) / CLOCKS_PER_SEC;
   
   printf("\nThe relative forward error is relres = %e\n",relres);
   printf("\nTemps d'exécution pour dgbtrf: %f secondes\n", cpu_time_used_TRF);
