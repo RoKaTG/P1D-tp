@@ -4,7 +4,10 @@
 /* to solve the Poisson 1D problem        */
 /******************************************/
 #include "../include/lib_poisson1D.h"
-#include "../include/atlas_headers.h"
+
+#define TRF 0
+#define TRI 1
+#define SV 2
 
 int main(int argc,char *argv[])
 /* ** argc: Nombre d'arguments */
@@ -15,12 +18,21 @@ int main(int argc,char *argv[])
   int nbpoints, la;
   int ku, kl, kv, lab;
   int *ipiv;
-  int info;
+  int info = 1;
   int NRHS;
+  int IMPLEM = 0;
   double T0, T1;
   double *RHS, *EX_SOL, *X;
   double **AAB;
   double *AB;
+
+
+  if (argc == 2) {
+    IMPLEM = atoi(argv[1]);
+  } else if (argc > 2) {
+    perror("Application takes at most one argument");
+    exit(1);
+  }
 
 /************************************************/
 
@@ -75,37 +87,45 @@ int main(int argc,char *argv[])
   cblas_dgbmv(CblasColMajor, CblasNoTrans, la, la, kl, ku, alpha, AB, lab, X, incx, beta, RHS, incy);
 
   printf("Solution with LAPACK\n");
-  /* LU Factorization */
-  info=0;
   ipiv = (int *) calloc(la, sizeof(int));
-  dgbtrf_(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
+
+  /* LU Factorization */
+  if (IMPLEM == TRF) {
+    dgbtrf_(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
+  }
 
   /* LU for tridiagonal matrix  (can replace dgbtrf_) */
-  ierr = dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
-
-  write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat");
+  if (IMPLEM == TRI) {
+    dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
+  }
   
-  /* Solution (Triangular) */
-  if (info==0){
-    dgbtrs_("N", &la, &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
-    if (info!=0){printf("\n INFO DGBTRS = %d\n",info);}
-  }else{
-    printf("\n INFO = %d\n",info);
+  if (IMPLEM == TRI || IMPLEM == TRF){
+    /* Solution (Triangular) */
+    if (info==0){
+      dgbtrs_("N", &la, &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
+      if (info!=0){printf("\n INFO DGBTRS = %d\n",info);}
+    }else{
+      printf("\n INFO = %d\n",info);
+    }
   }
 
   /* It can also be solved with dgbsv */
   // TODO : use dgbsv
-  if (info==0) {
-    dgbsv_("N", &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
-    if (info!=0){printf("\n INFO DGBSV = %d\n",info);}
+  if (IMPLEM == SV) {
+    if (info==0) {
+        dgbsv_("N", &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
+        if (info!=0){printf("\n INFO DGBSV = %d\n",info);}
 
-  } else {
-    printf("\n INFO = %d\n",info);
-  }
+    } else {
+        printf("\n INFO = %d\n",info);
+    }
+}
+
+  write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat");
   write_xy(RHS, X, &la, "SOL.dat");
 
   /* Relative forward error */
-  // TODO : Compute relative norm of the residual
+  relres = relative_forward_error(RHS, EX_SOL, &la);
   
   printf("\nThe relative forward error is relres = %e\n",relres);
 
@@ -115,3 +135,4 @@ int main(int argc,char *argv[])
   free(AB);
   printf("\n\n--------- End -----------\n");
 }
+
