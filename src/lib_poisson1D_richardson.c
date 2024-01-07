@@ -1,5 +1,5 @@
 /**********************************************/
-/* lib_poisson1D.c                            */
+/* lib_poisson1D_richardson.c                 */
 /* Numerical library developed to solve 1D    */ 
 /* Poisson problem (Heat equation)            */
 /**********************************************/
@@ -297,4 +297,107 @@ void dcscmv(int *la, double *csc_values, int *csc_row_index, int *csc_col_ptr, d
             y[csc_row_index[idx]] += csc_values[idx] * x[col];
         }
     }
+}
+
+void richardson_csr(double *csr_values, int *csr_col_index, int *csr_row_ptr, double *RHS, double *X, int *la, double *alpha, double *tol, int *maxit, double *resvec) {
+    double *AX = (double*) malloc(*la * sizeof(double));
+    double *Residual = (double*) malloc(*la * sizeof(double));
+    int iter;
+    double norm_res;
+
+    for (int i = 0; i < *la; ++i) {
+        X[i] = 0.0;
+    }
+
+    for (iter = 0; iter < *maxit; ++iter) {
+        dcsrmv(la, csr_values, csr_col_index, csr_row_ptr, X, AX);
+
+        for (int i = 0; i < *la; ++i) {
+            Residual[i] = RHS[i] - AX[i];
+        }
+
+        norm_res = cblas_dnrm2(*la, Residual, 1);
+        resvec[iter] = norm_res;
+
+        if (norm_res < *tol) {
+            break;
+        }
+
+        for (int i = 0; i < *la; ++i) {
+            X[i] += *alpha * Residual[i];
+        }
+    }
+
+    free(AX);
+    free(Residual);
+}
+
+void jacobi_csr(double *csr_values, int *csr_col_index, int *csr_row_ptr, double *RHS, double *X, int *la, double *tol, int *maxit, double *resvec) {
+    double *X_old = (double*) malloc(*la * sizeof(double));
+    double *AX = (double*) malloc(*la * sizeof(double));
+    int iter;
+    double norm_res;
+
+    for (int i = 0; i < *la; ++i) {
+        X[i] = 0.0;
+    }
+
+    for (iter = 0; iter < *maxit; ++iter) {
+        for (int i = 0; i < *la; ++i) {
+            X_old[i] = X[i];
+        }
+
+        dcsrmv(la, csr_values, csr_col_index, csr_row_ptr, X_old, AX);
+
+        for (int i = 0; i < *la; ++i) {
+            double diag = csr_values[csr_row_ptr[i]];
+            X[i] = (RHS[i] - AX[i] + diag * X_old[i]) / diag;
+        }
+
+        norm_res = cblas_dnrm2(*la, RHS, 1);  // Calcul de la norme du résidu
+        resvec[iter] = norm_res;
+
+        if (norm_res < *tol) {
+            break;
+        }
+    }
+
+    free(X_old);
+    free(AX);
+}
+
+void gauss_seidel_csr(double *csr_values, int *csr_col_index, int *csr_row_ptr, double *RHS, double *X, int *la, double *tol, int *maxit, double *resvec) {
+    double *AX = (double*) malloc(*la * sizeof(double));
+    int iter;
+    double norm_res;
+
+    for (int i = 0; i < *la; ++i) {
+        X[i] = 0.0;
+    }
+
+    for (iter = 0; iter < *maxit; ++iter) {
+        dcsrmv(la, csr_values, csr_col_index, csr_row_ptr, X, AX);
+
+        for (int i = 0; i < *la; ++i) {
+            double diag = csr_values[csr_row_ptr[i]];
+            double sigma = 0.0;
+
+            for (int idx = csr_row_ptr[i]; idx < csr_row_ptr[i + 1]; ++idx) {
+                if (csr_col_index[idx] != i) {
+                    sigma += csr_values[idx] * X[csr_col_index[idx]];
+                }
+            }
+
+            X[i] = (RHS[i] - sigma) / diag;
+        }
+
+        norm_res = cblas_dnrm2(*la, RHS, 1);  // Calcul de la norme du résidu
+        resvec[iter] = norm_res;
+
+        if (norm_res < *tol) {
+            break;
+        }
+    }
+
+    free(AX);
 }

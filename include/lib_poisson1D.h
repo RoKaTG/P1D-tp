@@ -45,3 +45,7 @@ void csc_poisson1D(double *AB, int *la, double *csc_values, int *csc_row_index, 
 
 void dcsrmv(int *la, double *csr_values, int *csr_col_index, int *csr_row_ptr, double *x, double *y);
 void dcscmv(int *la, double *csc_values, int *csc_row_index, int *csc_col_ptr, double *x, double *y);
+
+void richardson_csr(double *csr_values, int *csr_col_index, int *csr_row_ptr, double *RHS, double *X, int *la, double *alpha, double *tol, int *maxit, double *resvec);
+void jacobi_csr(double *csr_values, int *csr_col_index, int *csr_row_ptr, double *RHS, double *X, int *la, double *tol, int *maxit, double *resvec);
+void gauss_seidel_csr(double *csr_values, int *csr_col_index, int *csr_row_ptr, double *RHS, double *X, int *la, double *tol, int *maxit, double *resvec);

@@ -163,8 +163,22 @@ void LU_Facto(double* AB, int *lab, int *la, int *kv) {
 }
 
 double relative_forward_error(double* x, double* y, int* la){
-  return 0;
+    double error = 0.0;
+    double norm_x = 0.0;
+    for (int i = 0; i < *la; ++i) {
+        double diff = x[i] - y[i];
+        error += diff * diff;
+        norm_x += x[i] * x[i];
+    }
+    error = sqrt(error);
+    norm_x = sqrt(norm_x);
+    if (norm_x != 0.0) {
+        return error / norm_x;
+    } else {
+        return error;
+    }
 }
+
 
 int indexABCol(int i, int j, int *lab){
   return j*(*lab)+i;

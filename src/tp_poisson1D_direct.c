@@ -4,6 +4,7 @@
 /* to solve the Poisson 1D problem        */
 /******************************************/
 #include "../include/lib_poisson1D.h"
+#include <time.h> // Pour une estimation des performances
 
 #define TRF 0
 #define TRI 1
@@ -89,16 +90,29 @@ int main(int argc,char *argv[])
   printf("Solution with LAPACK\n");
   ipiv = (int *) calloc(la, sizeof(int));
 
+
+  clock_t start_TRF = clock();
+
   /* LU Factorization */
   if (IMPLEM == TRF) {
     dgbtrf_(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
   }
 
+  clock_t end_TRF = clock();
+  double cpu_time_used_TRF = ((double) (end_TRF - start_TRF)) / CLOCKS_PER_SEC;
+
+  clock_t start_TRI = clock();
+
   /* LU for tridiagonal matrix  (can replace dgbtrf_) */
   if (IMPLEM == TRI) {
     dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
   }
+
+  clock_t end_TRI = clock();
+  double cpu_time_used_TRI = ((double) (end_TRI - start_TRI)) / CLOCKS_PER_SEC;
   
+  clock_t start_TRS = clock();
+
   if (IMPLEM == TRI || IMPLEM == TRF){
     /* Solution (Triangular) */
     if (info==0){
@@ -108,6 +122,11 @@ int main(int argc,char *argv[])
       printf("\n INFO = %d\n",info);
     }
   }
+
+  clock_t end_TRS = clock();
+  double cpu_time_used_TRS = ((double) (end_TRS - start_TRS)) / CLOCKS_PER_SEC;
+
+  clock_t start_SV = clock();
 
   /* It can also be solved with dgbsv */
   // TODO : use dgbsv
@@ -120,6 +139,8 @@ int main(int argc,char *argv[])
         printf("\n INFO = %d\n",info);
     }
 }
+  clock_t end_SV = clock();
+  double cpu_time_used_SV = ((double) (end_SV - start_SV)) / CLOCKS_PER_SEC;
 
   write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat");
   write_xy(RHS, X, &la, "SOL.dat");
@@ -128,6 +149,11 @@ int main(int argc,char *argv[])
   relres = relative_forward_error(RHS, EX_SOL, &la);
   
   printf("\nThe relative forward error is relres = %e\n",relres);
+  printf("\nTemps d'exécution pour dgbtrf: %f secondes\n", cpu_time_used_TRF);
+  printf("Temps d'exécution pour dgbtrftridiag: %f secondes\n", cpu_time_used_TRI);
+  printf("Temps d'exécution pour dgbtrs: %f secondes\n", cpu_time_used_TRS);
+  printf("Temps d'exécution pour dgbsv: %f secondes\n", cpu_time_used_SV);
+
 
   free(RHS);
   free(EX_SOL);
